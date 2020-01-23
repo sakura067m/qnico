@@ -1,5 +1,13 @@
 import sys
-from . import NicoDownloader
+if __package__:
+    from . import NicoDownloader
+else:
+    from importlib import import_module
+    from pathlib import Path
+    path = Path(sys.modules[__name__].__file__)
+    sys.path.insert(0, str(path.parents[1]))
+    package = import_module(path.parts[-2])
+    NicoDownloader = package.NicoDownloader
 
 print(len(sys.argv))
 def main():
