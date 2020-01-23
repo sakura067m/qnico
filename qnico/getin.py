@@ -1,4 +1,4 @@
 import os
 
-def lk:
+def lk():
     return os.environ["nico_login"].split()

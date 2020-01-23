@@ -22,3 +22,6 @@ def main():
         NicoDownloader.go(args.videoid, args.getname, args.savehere)
     else:
         NicoDownloader.openwindow()
+
+if __name__ == "__main__":
+    main()
