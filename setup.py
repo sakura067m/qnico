@@ -16,7 +16,7 @@ print(sys.prefix)
 
 setup(
     name="qnico",  # TBC
-    version="0.2b1",
+    version="0.2",
     description="get info and mp4 from niconico",
     url="https://github.com/sakura067m/qStream",
     author="sakura067m",

@@ -1,6 +1,6 @@
 from .getin import lk
 
-# set variable
+# init variable
 from configparser import ConfigParser
 import pkgutil
 config = ConfigParser()
