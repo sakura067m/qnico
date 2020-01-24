@@ -13,7 +13,7 @@ else:
 
 setup(
     name="qnico",  # TBC
-    version="0.1b3",
+    version="0.1b4",
     description="get info and mp4 from niconico",
     url="https://github.com/sakura067m/qStream",
     author="sakura067m",
@@ -25,7 +25,7 @@ setup(
         "qStream":[]
     },
     entry_points={
-        "gui_scripts": ["qnico = qnico__main__:main"]
+        "gui_scripts": ["qnico = qnico.__main__:main"]
     },
     install_requires=requirements,
     keywords="niconico download dmc",
