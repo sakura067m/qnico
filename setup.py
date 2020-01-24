@@ -24,7 +24,7 @@ setup(
 ##    license='',  # TBD
     packages=["qnico"],
     package_dir={"qnico": "qnico"},
-    package_files={
+    package_data={
         "qnico": ["config/data.cfg"]
     },
     entry_points={
