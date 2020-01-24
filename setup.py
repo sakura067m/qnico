@@ -11,9 +11,12 @@ else:
         "PyQt5>=5.8.2",  # TBD
     ]
 
+import sys
+print(sys.prefix)
+
 setup(
     name="qnico",  # TBC
-    version="0.1b7",
+    version="0.2",
     description="get info and mp4 from niconico",
     url="https://github.com/sakura067m/qStream",
     author="sakura067m",
@@ -22,7 +25,7 @@ setup(
     packages=["qnico"],
     package_dir={"qnico": "qnico"},
     package_data={
-        "qStream":[]
+        "qnico": ["config/data.cfg"]
     },
     entry_points={
         "gui_scripts": ["qnico = qnico.__main__:main"]

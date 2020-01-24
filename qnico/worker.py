@@ -1,10 +1,13 @@
 import sys
+import logging
 import requests
 from . import lk
 from urllib.parse import urlencode,parse_qs,urlparse
 from PyQt5.QtCore import pyqtSignal, QThread, QTimer, QObject, QByteArray
 import lxml.html
 import json
+
+logger = logging.getLogger(__name__)
 
 class DmcSessionRequest:
     def __init__(self,dar):
@@ -104,10 +107,10 @@ class NicoJob(QObject):
                            ,data=key
                            )
         res.raise_for_status()
-        print("Login: Success")
+        logger.info("Login: Success")
 
     def settarget(self, videoid):
-        print("heyheyhey")
+        logger.debug("set target %s", videoid)
         self.videoid = videoid
         self.get_info()
         
@@ -115,13 +118,14 @@ class NicoJob(QObject):
         session = self.session
         videoid = self.videoid
         if videoid[:2] != "sm":
+            logger.error("N/A target: %s", videoid)
             raise ValueError("we won't handle this: {0}".format(videoid))
-        print("target:",videoid)
+        logger.info("target: %s", videoid)
         # get access
         video_url = "http://www.nicovideo.jp/watch/" + videoid
         self.video_url = video_url
         res2 = session.get(video_url)
-        print("Got the video's info")
+        logger.debug("Got the video's info", extra=res2.headers)
         res2.raise_for_status()
         res2_html = lxml.html.fromstring(res2.content)
         watch_data = res2_html.xpath("//div[@id='js-initial-watch-data']")[0]
@@ -142,7 +146,7 @@ class NicoJob(QObject):
                             )
         fmt = resTN.headers["content-type"].split('/')[-1]
 ##        print(resTN.headers)
-        print("Thumnail:", fmt)
+        logger.debug("Thumnail format: %s", fmt)
 ##        print("TN type:",type(resTN.content))
         self.thumnail.emit(resTN.content, fmt)
         
@@ -160,14 +164,13 @@ class NicoJob(QObject):
         
         z2 = videoinfo["dmcInfo"]
         if z2 is None:
-            print("server: smile mode")
+            logger.info("server: smile mode")
             self.contentURi = videoinfo["smileInfo"]["url"]
         else:
-            print("server: dmc mode")
+            logger.info("server: dmc mode")
             dmc_api_response = z2["session_api"]
             dsr = DmcSessionRequest(dmc_api_response)
             target = dsr.url + "?_format=json"
-            print("getting info")
             
             res3 = session.post(
                 target,
@@ -177,7 +180,7 @@ class NicoJob(QObject):
                 )
             dmc_session_response = res3.json()
             res3.raise_for_status()
-            print(res3.headers)
+            logger.debug("got video info", extra=res3.headers)
 
             # prepare for streaming
             stream_data = dmc_session_response["data"]
@@ -185,7 +188,7 @@ class NicoJob(QObject):
             self.contentURi = stream_info["content_uri"]
             api_host = urlparse(dsr.url).netloc
             # prepare heartbeat
-            print("publishing...")
+            logger.info("publishing...")
             hb_api = "{}/{}?_format=json&_method=PUT".format(dsr.url,stream_info["id"])
             pf_header = {"Access-Control-Request-Method": "POST",
                          "Access-Control-Request-Headers": "content-type",
@@ -193,7 +196,7 @@ class NicoJob(QObject):
                          "Referer": self.video_url
                          }
             lifetime = stream_info["keep_method"]["heartbeat"]["lifetime"]
-            print("lifetime:", lifetime)
+            logger.info("lifetime: %d[ms]", lifetime)
             res_pf = requests.options(hb_api,
                                       headers=pf_header
                                       )
@@ -212,7 +215,7 @@ class NicoJob(QObject):
             self.sinus.timeout.connect(self.heartbeat)
             
             # start heartbeat
-            print("heart beat")
+            logger.info("start heart beat", extra=hb_param)
             self.sinus.start(lifetime-10000)  # 10000[ms] margin
             self.heartbeat()
         
@@ -221,23 +224,21 @@ class NicoJob(QObject):
     def heartbeat(self):
         res_hb = self.session.post(**self.hb_param)
         res_hb.raise_for_status()
-        print("heartbeat:")
-        print(res_hb.headers)
+        logger.debug("heartbeat:", extra=res_hb.headers)
         
     def download_(self, filename):
         session = self.session
-        print("save as:",filename)
+        logger.info("save as: %s",filename)
         with session.get(self.contentURi, stream=True) as res4:
 ##            print(res4.status_code)
             res4.raise_for_status()
-            print("content's info:")
-            print(res4.headers)
-            print("health:", res4.headers["Connection"])
+            logger.debug("content's info:", extra=res4.headers)
+            logger.info("connection health: %s", res4.headers["Connection"])
             if "close" == res4.headers["Connection"]:
                 raise RuntimeError("File Stream was closed")
             fs = res4.headers.get("content-length")
             self.filesize.emit(int(fs))
-            print("size:",fs)
+            logger.info("size: %d[byte]", fs)
             cs = 1024*16
             status = 0
             with open(filename,"wb") as fout:
@@ -247,13 +248,13 @@ class NicoJob(QObject):
                         status += cs
                         self.status.emit(status)
                     else:
-                        print("*break*")
+                        logger.warn("*break*")
                         break
                     
                     if not k%100:
                         self.wait()  # app.processEvents()
         print(k)
-        print("done")
+        logger.info("job has done")
         self.doneSig.emit()
 
     def do(self, videoid, getname, changename):
