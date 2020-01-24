@@ -9,7 +9,6 @@ else:
     package = import_module(path.parts[-2])
     NicoDownloader = package.NicoDownloader
 
-print(len(sys.argv))
 def main():
     if len(sys.argv)>1:
         import argparse
@@ -19,12 +18,12 @@ def main():
                             "--getname",
                             help="get name from title",
                             action="store_true"
-                            )  # default = False
+                            )  # default: False
         parser.add_argument("-s",
                             "--savehere",
                             help="save here immediate",
                             action="store_false"
-                            )  # default = True
+                            )  # default: True
         args = parser.parse_args()
         print(args.videoid,args.getname,args.savehere)
         NicoDownloader.go(args.videoid, args.getname, args.savehere)
