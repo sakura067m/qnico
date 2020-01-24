@@ -38,3 +38,5 @@ setup(
         "Intended Audience :: Developers",
     ],
 )
+
+print('PLEASE SET ENV["nico_login"]="email@yours.for.login passward".')
