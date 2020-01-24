@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
 from PyQt5.QtCore import pyqtSignal, QThread, QObject
 from PyQt5.QtGui import QPixmap
 
-from . import NicoJob
+from . import NicoJob, default_path
 
 class NicoDownloader(QMainWindow):
 
@@ -109,8 +109,7 @@ class NicoDownloader(QMainWindow):
         self.getready.emit()
 
     def getname(self):
-        defalut_path = Path("E:/nought6212/Videos")
-        p = (defalut_path/self.name()).with_suffix(".mp4")
+        p = Path(defalut_path, self.name()).with_suffix(".mp4")
         select = QFileDialog.getSaveFileName(
             parent = self.parent(),
             caption="Save as...",
