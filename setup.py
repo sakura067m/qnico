@@ -25,7 +25,7 @@ setup(
     packages=["qnico"],
     package_dir={"qnico": "qnico"},
     package_data={
-        "qStream":[]
+        "qStream":["cfg/data.cfg"]
     },
     data_files={
         "config": ["cfg/data.cfg"]
