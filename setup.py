@@ -27,9 +27,9 @@ setup(
     package_data={
         "qStream":[]
     },
-    data_files=[
-        ("config", ["cfg/data.cfg"])
-        ],
+    data_files={
+        "config": ["cfg/data.cfg"]
+        },
     entry_points={
         "gui_scripts": ["qnico = qnico.__main__:main"]
     },
