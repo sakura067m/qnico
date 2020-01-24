@@ -1,5 +1,7 @@
 __all__ = ["NicoJob", "NicoDownloader"]
 
+import sys
+
 # init variable
 from configparser import ConfigParser
 import pkgutil
