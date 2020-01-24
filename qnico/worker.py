@@ -95,7 +95,8 @@ class NicoJob(QObject):
         self.wait = mainapp.processEvents
         self.startDL.connect(self.download_)
 ##        self.wakeup.connect(self.setup)
-        self.sinus = QTimer()  # timer for heartbeat
+        self.sinus = QTimer(self)  # timer for heartbeat
+        self.doneSig.connect(self.dead)
 
     def setup(self):
         # start session
@@ -103,8 +104,8 @@ class NicoJob(QObject):
         self.session = session
         # get cookie
         key=dict(zip(["mail_tel","password"],lk()))
-        res = session.post("https://secure.nicovideo.jp/secure/login"\
-                           ,data=key
+        res = session.post("https://secure.nicovideo.jp/secure/login",
+                           data=key
                            )
         res.raise_for_status()
         logger.info("Login: Success")
@@ -131,6 +132,7 @@ class NicoJob(QObject):
         watch_data = res2_html.xpath("//div[@id='js-initial-watch-data']")[0]
         dmc_watch_response = json.loads(watch_data.attrib["data-api-data"])
 ##        dmc_api_response = dmc_watch_response["video"]["dmcInfo"]["session_api"]
+        # logger.debug("DWR:\n%s", dmc_watch_response)
         videoinfo = dmc_watch_response["video"]
         self.videoinfo = videoinfo
         self.infoOK.emit()
@@ -184,7 +186,11 @@ class NicoJob(QObject):
 
             # prepare for streaming
             stream_data = dmc_session_response["data"]
+            logger.debug("received DSR", extra=stream_data)
             stream_info = stream_data["session"]
+            recipe = stream_info["content_src_id_sets"][0]["content_src_ids"][0]["src_id_to_mux"]
+            logger.info("recipe:\n\t%s\n\t%s", *recipe.values())
+
             self.contentURi = stream_info["content_uri"]
             api_host = urlparse(dsr.url).netloc
             # prepare heartbeat
@@ -201,7 +207,7 @@ class NicoJob(QObject):
                                       headers=pf_header
                                       )
             res_pf.raise_for_status()
-            print(res_pf.headers)
+            logger.debug("", extra=res_pf.headers)
             
             hb_header = {"Host": api_host,
                          "Origin": "http://www.nicovideo.jp",
@@ -215,7 +221,7 @@ class NicoJob(QObject):
             self.sinus.timeout.connect(self.heartbeat)
             
             # start heartbeat
-            logger.info("start heart beat", extra=hb_param)
+            logger.info("start heart beat", extra=self.hb_param)
             self.sinus.start(lifetime-10000)  # 10000[ms] margin
             self.heartbeat()
         
@@ -238,7 +244,7 @@ class NicoJob(QObject):
                 raise RuntimeError("File Stream was closed")
             fs = res4.headers.get("content-length")
             self.filesize.emit(int(fs))
-            logger.info("size: %d[byte]", fs)
+            logger.info("size: %s[byte]", fs)
             cs = 1024*16
             status = 0
             with open(filename,"wb") as fout:
@@ -253,9 +259,13 @@ class NicoJob(QObject):
                     
                     if not k%100:
                         self.wait()  # app.processEvents()
-        print(k)
         logger.info("job has done")
         self.doneSig.emit()
+        self.wait()
+    
+    def dead(self):
+        self.sinus.stop()
+        self.sinus.deleteLater()
 
     def do(self, videoid, getname, changename):
         self.settarget(videoid)
