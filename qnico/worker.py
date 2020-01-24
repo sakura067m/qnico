@@ -259,11 +259,14 @@ class NicoJob(QObject):
     def do(self, videoid, getname, changename):
         self.settarget(videoid)
         self.getThumnail()
+
         if getname:
             name = self.videoinfo["title"]
         else:
             name = videoid
+        
         if changename:
             self.confirm.emit(name)
         else:
+            self.name.emit(name)
             self.prepare()

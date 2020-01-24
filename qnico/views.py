@@ -40,7 +40,6 @@ class NicoDownloader(QMainWindow):
         self.job = job  # save from GC
         job.moveToThread(worker)
         # trigger
-##        self.enter.connect(lambda: print("hey"))
         self.wakeup.connect(job.setup)
         self.start.connect(self.download)
         self.trigger.connect(job.do)
@@ -105,7 +104,6 @@ class NicoDownloader(QMainWindow):
         self.query.emit(self.gflag(), self.tflag)
         self.wait()
         if self.cflag():
-            print("weeeee")
             self.getname()
         self.getready.emit()
 
