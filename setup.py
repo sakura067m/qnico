@@ -24,6 +24,9 @@ setup(
 ##    license='',  # TBD
     packages=["qnico"],
     package_dir={"qnico": "qnico"},
+    package_files={
+        "qnico": ["config/data.cfg"]
+    }
     entry_points={
         "gui_scripts": ["qnico = qnico.__main__:main"]
     },
