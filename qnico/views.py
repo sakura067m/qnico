@@ -113,7 +113,7 @@ class NicoDownloader(QMainWindow):
 
     def getname(self):
         default_path = Path(config["USER"]["savepath"]).expanduser()
-        p = Path(defalut_path, self.name()).with_suffix(".mp4")
+        p = Path(default_path, self.name()).with_suffix(".mp4")
         select = QFileDialog.getSaveFileName(
             parent = self.parent(),
             caption="Save as...",
