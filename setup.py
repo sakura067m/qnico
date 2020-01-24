@@ -11,6 +11,9 @@ else:
         "PyQt5>=5.8.2",  # TBD
     ]
 
+import sys
+print(sys.prefix)
+
 setup(
     name="qnico",  # TBC
     version="0.2a1",
@@ -24,7 +27,9 @@ setup(
     package_data={
         "qStream":[]
     },
-    data_files=[("config", ["cfg/data.cfg"])],
+    data_files=[
+        ("config", ["cfg/data.cfg"])
+        ],
     entry_points={
         "gui_scripts": ["qnico = qnico.__main__:main"]
     },
