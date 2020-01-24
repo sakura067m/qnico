@@ -24,9 +24,7 @@ setup(
 ##    license='',  # TBD
     packages=["qnico"],
     package_dir={"qnico": "qnico"},
-    package_data={
-        "qStream":["cfg/data.cfg"]
-    },
+    include_package_data=True,
     data_files={
         "config": ["cfg/data.cfg"]
         },
