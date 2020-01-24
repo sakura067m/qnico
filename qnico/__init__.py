@@ -4,7 +4,7 @@ from .getin import lk
 from configparser import ConfigParser
 import pkgutil
 config = ConfigParser()
-config.read_string(pkgutil.get_data(__package__, "config/data.cfg"))
+config.read_string(pkgutil.get_data(__package__, "config/data.cfg").decode())
 
 import logging
 base_logger = logging.getLogger(__package__)
