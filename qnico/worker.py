@@ -261,12 +261,12 @@ class NicoJob(QObject):
         self.getThumnail()
 
         if getname:
-            name = self.videoinfo["title"]
+            self.gettitle()
         else:
-            name = videoid
+            self.name.emit(videoid+".mp4")
+        self.wait()
         
         if changename:
             self.confirm.emit(name)
         else:
-            self.name.emit(name)
             self.prepare()
