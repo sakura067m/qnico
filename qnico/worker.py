@@ -215,7 +215,7 @@ class NicoJob(QObject):
             self.sinus.timeout.connect(self.heartbeat)
             
             # start heartbeat
-            logger.info("start heart beat", extra=hb_param)
+            logger.info("start heart beat", extra=self.hb_param)
             self.sinus.start(lifetime-10000)  # 10000[ms] margin
             self.heartbeat()
         
