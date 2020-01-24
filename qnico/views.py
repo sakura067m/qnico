@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QFileDialog,
                              QWidget, QPushButton, QCheckBox,
@@ -8,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
 from PyQt5.QtCore import pyqtSignal, QThread, QObject
 from PyQt5.QtGui import QPixmap
 
-from . import NicoJob
+from . import NicoJob, default_path
 
 class NicoDownloader(QMainWindow):
 
@@ -40,7 +41,6 @@ class NicoDownloader(QMainWindow):
         self.job = job  # save from GC
         job.moveToThread(worker)
         # trigger
-##        self.enter.connect(lambda: print("hey"))
         self.wakeup.connect(job.setup)
         self.start.connect(self.download)
         self.trigger.connect(job.do)
@@ -105,15 +105,15 @@ class NicoDownloader(QMainWindow):
         self.query.emit(self.gflag(), self.tflag)
         self.wait()
         if self.cflag():
-            print("weeeee")
             self.getname()
         self.getready.emit()
 
     def getname(self):
+        p = Path(defalut_path, self.name()).with_suffix(".mp4")
         select = QFileDialog.getSaveFileName(
             parent = self.parent(),
             caption="Save as...",
-            directory="E:/nought6212/Videos/{}.mp4".format(self.name()),
+            directory=str(p),
             filter="mp4 (*.mp4);;flv (*.flv);;All files (*.*)",
             initialFilter="mp4"
             )
@@ -124,7 +124,7 @@ class NicoDownloader(QMainWindow):
         else:
             if not '.' in select[0]:
                 print("oh")
-                savepath = "{}.{}".format(select[0], select[1][-5:])
+                savepath = str(Path(select[0]).with_suffix(select[1][-5:]))
             else:
                 savepath = select[0]
             self.setsavename(savepath)

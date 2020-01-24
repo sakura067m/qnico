@@ -83,7 +83,7 @@ class NicoJob(QObject):
     thumnail = pyqtSignal(bytes,str)
     infoOK = pyqtSignal()
     detailed = pyqtSignal()
-    confirm = pyqtSignal(str)
+    confirm = pyqtSignal()
 ##    lifetime = pyqtSignal()
     
     def __init__(self, mainapp):
@@ -259,11 +259,14 @@ class NicoJob(QObject):
     def do(self, videoid, getname, changename):
         self.settarget(videoid)
         self.getThumnail()
+
         if getname:
-            name = self.videoinfo["title"]
+            self.gettitle()
         else:
-            name = videoid
+            self.name.emit(videoid+".mp4")
+        self.wait()
+        
         if changename:
-            self.confirm.emit(name)
+            self.confirm.emit()
         else:
             self.prepare()
