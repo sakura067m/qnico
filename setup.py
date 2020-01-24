@@ -13,7 +13,7 @@ else:
 
 setup(
     name="qnico",  # TBC
-    version="0.1b5",
+    version="0.2a1",
     description="get info and mp4 from niconico",
     url="https://github.com/sakura067m/qStream",
     author="sakura067m",
@@ -24,6 +24,7 @@ setup(
     package_data={
         "qStream":[]
     },
+    data_files=[("config", ["cfg/data.cfg"])],
     entry_points={
         "gui_scripts": ["qnico = qnico.__main__:main"]
     },

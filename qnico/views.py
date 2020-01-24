@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import logging
 from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QFileDialog,
                              QWidget, QPushButton, QCheckBox,
@@ -9,7 +10,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
 from PyQt5.QtCore import pyqtSignal, QThread, QObject
 from PyQt5.QtGui import QPixmap
 
-from . import NicoJob, default_path
+from . import NicoJob, config
+
+logger = logging.getLogger(__name__)
 
 class NicoDownloader(QMainWindow):
 
@@ -109,6 +112,7 @@ class NicoDownloader(QMainWindow):
         self.getready.emit()
 
     def getname(self):
+        default_path = Path(config["DATA"]["savepath"]).expanduser()
         p = Path(defalut_path, self.name()).with_suffix(".mp4")
         select = QFileDialog.getSaveFileName(
             parent = self.parent(),
@@ -117,13 +121,13 @@ class NicoDownloader(QMainWindow):
             filter="mp4 (*.mp4);;flv (*.flv);;All files (*.*)",
             initialFilter="mp4"
             )
-        print(select)
+        logger.debug("save as: %s [%s]", *select)
         if not select[0]:
-            print("canceled")
+            logger.info("canceled")
             self.canceled.emit()
         else:
             if not '.' in select[0]:
-                print("oh")
+                logger.warning("savename was %s / %s", *select)
                 savepath = str(Path(select[0]).with_suffix(select[1][-5:]))
             else:
                 savepath = select[0]
