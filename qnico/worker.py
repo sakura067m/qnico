@@ -87,6 +87,7 @@ class NicoJob(QObject):
     infoOK = pyqtSignal()
     detailed = pyqtSignal()
     confirm = pyqtSignal()
+    video_size = pyqtSignal(str)
 ##    lifetime = pyqtSignal()
     
     def __init__(self, mainapp):
@@ -139,12 +140,13 @@ class NicoJob(QObject):
 
     def gettitle(self):
         title = self.videoinfo["title"]
-        self.name.emit(title+".mp4")
+        self.name.emit(title)  # commit
 
     def getThumnail(self):
         session = self.session
-        resTN = session.get("https://tn.smilevideo.jp/smile?i="
-                            "{}.L".format(self.videoid[2:])
+        resTN = session.get(
+ ##           "https://tn.smilevideo.jp/smile?i={}.L".format(self.videoid[2:]),
+            self.videoinfo["largeThumbnailURL"],
                             )
         fmt = resTN.headers["content-type"].split('/')[-1]
 ##        print(resTN.headers)
@@ -190,6 +192,7 @@ class NicoJob(QObject):
             stream_info = stream_data["session"]
             recipe = stream_info["content_src_id_sets"][0]["content_src_ids"][0]["src_id_to_mux"]
             logger.info("recipe:\n\t%s\n\t%s", *recipe.values())
+            self.video_size.emit(str(recipe["video_src_ids"][0]))
 
             self.contentURi = stream_info["content_uri"]
             api_host = urlparse(dsr.url).netloc
@@ -269,12 +272,8 @@ class NicoJob(QObject):
 
     def do(self, videoid, getname, changename):
         self.settarget(videoid)
-        self.getThumnail()
 
-        if getname:
-            self.gettitle()
-        else:
-            self.name.emit(videoid+".mp4")
+        self.detail(getname, True)  # always get Thumnail
         self.wait()
         
         if changename:

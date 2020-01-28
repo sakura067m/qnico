@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
                              QLabel, QLineEdit, QProgressBar,
                              QVBoxLayout,QHBoxLayout
                              )
-from PyQt5.QtCore import pyqtSignal, QThread, QObject
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, Qt
 from PyQt5.QtGui import QPixmap
 
 from . import NicoJob, config
@@ -20,7 +20,7 @@ class NicoDownloader(QMainWindow):
     trigger = pyqtSignal(str, bool, bool)  # (videoid, usetitle, changename)
     target = pyqtSignal(str)
     query = pyqtSignal(bool, bool)
-    savepath = pyqtSignal(str)
+    saveas = pyqtSignal(str)
     getready = pyqtSignal()
     # canceled  # button
     # start  # button
@@ -29,6 +29,9 @@ class NicoDownloader(QMainWindow):
     def __init__(self, mainapp, parent=None):
         super().__init__(parent)
         self.wait = mainapp.processEvents
+
+        self.dst = Path(config["USER"]["savepath"]).expanduser()
+        self._savename = ""
 
         self.initUI()
         self.initConnection()
@@ -52,9 +55,10 @@ class NicoDownloader(QMainWindow):
         job.status.connect(self.setValue)
         job.filesize.connect(self.setMaximum)
         job.readySig.connect(self.waitingbar)
-        job.name.connect(self.setsavename)
+        job.name.connect(self.changename)
+        job.video_size.connect(self.infobox.setText)
         job.thumnail.connect(self.showThumnail)
-        self.savepath.connect(job.download_)  # start download
+        self.saveas.connect(job.download_)  # start download
         # exit
         self.canceled.connect(self.reject)
         job.doneSig.connect(worker.quit)  # sleep it self
@@ -94,13 +98,14 @@ class NicoDownloader(QMainWindow):
         if self.autoclose:
             self.close()
     
-    def setarg(self, videoid, getname, savename):
+    def setarg(self, videoid, getname, changename):
         self.setvideoid(videoid)
         self.setgflag(getname)
-        self.setcflag(savename)
+        self.setcflag(changename)
 
     def enque(self):
         videoid = self.videoid()
+        self.setWindowTitle(videoid)
         self.target.emit(videoid)
         self.wait()
 
@@ -109,15 +114,21 @@ class NicoDownloader(QMainWindow):
         self.wait()
         if self.cflag():
             self.getname()
-        self.getready.emit()
+        self.getready.emit()  # job will collect detail
+    
+    def savepath(self):
+        if self._savename:
+            return str(self._savename)
+        else:
+            name = self.name()
+            p = Path(self.dst, self.name()).with_suffix(".mp4")
+            return str(p)
 
     def getname(self):
-        default_path = Path(config["USER"]["savepath"]).expanduser()
-        p = Path(default_path, self.name()).with_suffix(".mp4")
         select = QFileDialog.getSaveFileName(
             parent = self.parent(),
             caption="Save as...",
-            directory=str(p),
+            directory=self.savepath(),
             filter="mp4 (*.mp4);;flv (*.flv);;All files (*.*)",
             initialFilter="mp4"
             )
@@ -131,7 +142,11 @@ class NicoDownloader(QMainWindow):
                 savepath = str(Path(select[0]).with_suffix(select[1][-5:]))
             else:
                 savepath = select[0]
-            self.setsavename(savepath)
+                c = Path(select[0])
+                self.dst = c.parent
+                self.changename(c)
+
+            self._savename = savepath
 ##        self.savepath.emit(savepath)
 
     def standby(self):
@@ -142,7 +157,7 @@ class NicoDownloader(QMainWindow):
         self.getready.emit()
 
     def download(self):
-        self.savepath.emit(self.name())
+        self.saveas.emit(self.savepath())
     
     def showThumnail(self, thbytes, fmt):
         label = self.thumnail
@@ -181,12 +196,16 @@ class NicoDownloader(QMainWindow):
         self.setgflag = gflag.setChecked
         self.gflag = gflag.checkState
         namebox = QLineEdit(parent=base)
-        self.setsavename = namebox.setText
+        self.changename = namebox.setText
         self.name = namebox.text
         cflag = QCheckBox("C",parent=base)
         self.setcflag = cflag.setChecked
         self.cflag = cflag.checkState
         self.cue = lambda: (self.videoid(),self.gflag(),self.cflag())
+
+        infobox = QLabel("...waiting for videoid", parent=self)
+        self.infobox = infobox
+        infobox.setAlignment(Qt.AlignRight)
 
         thumnail = QLabel(self)
         self.thumnail = thumnail
@@ -223,6 +242,7 @@ class NicoDownloader(QMainWindow):
         
         baseLO.addLayout(topLO)
 
+        baseLO.addWidget(infobox)
         baseLO.addWidget(thumnail)
         
         baseLO.addWidget(progressbar)
