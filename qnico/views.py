@@ -57,6 +57,7 @@ class NicoDownloader(QMainWindow):
         job.readySig.connect(self.waitingbar)
         job.name.connect(self.changename)
         job.video_size.connect(self.infobox.setText)
+        job.loginstatus.connect(self.infobox.setText)
         job.thumnail.connect(self.showThumnail)
         self.saveas.connect(job.download_)  # start download
         # exit

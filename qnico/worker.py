@@ -77,6 +77,7 @@ class DmcSessionRequest:
         return
 
 class NicoJob(QObject):
+    loginstatus = pyqtSignal(str)
     readySig = pyqtSignal()
     doneSig = pyqtSignal()
     name = pyqtSignal(str)
@@ -110,6 +111,7 @@ class NicoJob(QObject):
                            )
         res.raise_for_status()
         logger.info("Login: Success")
+        self.loginstatus.emit("Login: Success")
 
     def settarget(self, videoid):
         logger.debug("set target %s", videoid)
@@ -119,12 +121,18 @@ class NicoJob(QObject):
     def get_info(self):
         session = self.session
         videoid = self.videoid
+        # stem url
+        if videoid[:4] == "http":
+            videoid = videoid.split('/')[-1]
+            self.videoid = videoid
+            logger.info("Target was updated: %s", videoid)
+        # input check
         if videoid[:2] != "sm":
             logger.error("N/A target: %s", videoid)
-            raise ValueError("we won't handle this: {0}".format(videoid))
+            raise ValueError(f"we won't handle this: {videoid}")
         logger.info("target: %s", videoid)
         # get access
-        video_url = "http://www.nicovideo.jp/watch/" + videoid
+        video_url = f"https://www.nicovideo.jp/watch/{videoid}"
         self.video_url = video_url
         res2 = session.get(video_url)
         logger.debug("Got the video's info", extra=res2.headers)
