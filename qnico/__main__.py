@@ -25,7 +25,7 @@ def main():
                             action="store_false"
                             )  # default: True
         args = parser.parse_args()
-        print(args.videoid,args.getname,args.savehere)
+##        print(args.videoid,args.getname,args.savehere)
         NicoDownloader.go(args.videoid, args.getname, args.savehere)
     else:
         NicoDownloader.openwindow()

@@ -77,6 +77,7 @@ class DmcSessionRequest:
         return
 
 class NicoJob(QObject):
+    loginstatus = pyqtSignal(str)
     readySig = pyqtSignal()
     doneSig = pyqtSignal()
     name = pyqtSignal(str)
@@ -87,6 +88,7 @@ class NicoJob(QObject):
     infoOK = pyqtSignal()
     detailed = pyqtSignal()
     confirm = pyqtSignal()
+    video_size = pyqtSignal(str)
 ##    lifetime = pyqtSignal()
     
     def __init__(self, mainapp):
@@ -109,6 +111,7 @@ class NicoJob(QObject):
                            )
         res.raise_for_status()
         logger.info("Login: Success")
+        self.loginstatus.emit("Login: Success")
 
     def settarget(self, videoid):
         logger.debug("set target %s", videoid)
@@ -118,12 +121,18 @@ class NicoJob(QObject):
     def get_info(self):
         session = self.session
         videoid = self.videoid
+        # stem url
+        if videoid[:4] == "http":
+            videoid = videoid.split('/')[-1]
+            self.videoid = videoid
+            logger.info("Target was updated: %s", videoid)
+        # input check
         if videoid[:2] != "sm":
             logger.error("N/A target: %s", videoid)
-            raise ValueError("we won't handle this: {0}".format(videoid))
+            raise ValueError(f"we won't handle this: {videoid}")
         logger.info("target: %s", videoid)
         # get access
-        video_url = "http://www.nicovideo.jp/watch/" + videoid
+        video_url = f"https://www.nicovideo.jp/watch/{videoid}"
         self.video_url = video_url
         res2 = session.get(video_url)
         logger.debug("Got the video's info", extra=res2.headers)
@@ -139,12 +148,13 @@ class NicoJob(QObject):
 
     def gettitle(self):
         title = self.videoinfo["title"]
-        self.name.emit(title+".mp4")
+        self.name.emit(title)  # commit
 
     def getThumnail(self):
         session = self.session
-        resTN = session.get("https://tn.smilevideo.jp/smile?i="
-                            "{}.L".format(self.videoid[2:])
+        resTN = session.get(
+ ##           "https://tn.smilevideo.jp/smile?i={}.L".format(self.videoid[2:]),
+            self.videoinfo["largeThumbnailURL"],
                             )
         fmt = resTN.headers["content-type"].split('/')[-1]
 ##        print(resTN.headers)
@@ -166,9 +176,14 @@ class NicoJob(QObject):
         
         z2 = videoinfo["dmcInfo"]
         if z2 is None:
+            self.dmcmode = False
             logger.info("server: smile mode")
             self.contentURi = videoinfo["smileInfo"]["url"]
+            logger.debug("Not DMC mode: [Direct]%s", self.contentURi)
+            self.readySig.emit()
+            return
         else:
+            self.dmcmode = True
             logger.info("server: dmc mode")
             dmc_api_response = z2["session_api"]
             dsr = DmcSessionRequest(dmc_api_response)
@@ -190,6 +205,7 @@ class NicoJob(QObject):
             stream_info = stream_data["session"]
             recipe = stream_info["content_src_id_sets"][0]["content_src_ids"][0]["src_id_to_mux"]
             logger.info("recipe:\n\t%s\n\t%s", *recipe.values())
+            self.video_size.emit(str(recipe["video_src_ids"][0]))
 
             self.contentURi = stream_info["content_uri"]
             api_host = urlparse(dsr.url).netloc
@@ -239,9 +255,10 @@ class NicoJob(QObject):
 ##            print(res4.status_code)
             res4.raise_for_status()
             logger.debug("content's info:", extra=res4.headers)
-            logger.info("connection health: %s", res4.headers["Connection"])
-            if "close" == res4.headers["Connection"]:
-                raise RuntimeError("File Stream was closed")
+            if self.dmcmode:
+                logger.info("connection health: %s", res4.headers["Connection"])
+                if "close" == res4.headers["Connection"]:
+                    raise RuntimeError("File Stream was closed")
             fs = res4.headers.get("content-length")
             self.filesize.emit(int(fs))
             logger.info("size: %s[byte]", fs)
@@ -269,12 +286,8 @@ class NicoJob(QObject):
 
     def do(self, videoid, getname, changename):
         self.settarget(videoid)
-        self.getThumnail()
 
-        if getname:
-            self.gettitle()
-        else:
-            self.name.emit(videoid+".mp4")
+        self.detail(getname, True)  # always get Thumnail
         self.wait()
         
         if changename:

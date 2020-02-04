@@ -16,7 +16,7 @@ print(sys.prefix)
 
 setup(
     name="qnico",  # TBC
-    version="0.2.2",
+    version="0.3.1",
     description="get info and mp4 from niconico",
     url="https://github.com/sakura067m/qStream",
     author="sakura067m",
@@ -38,3 +38,7 @@ setup(
         "Intended Audience :: Developers",
     ],
 )
+
+print('PLEASE SET ENV["nico_login"]="email@yours.for.login passward". '
+      'e.g. Windows: set nico_login=email@yours.for.login passward'
+      'Otherwise, you can edit data.cfg.')
