@@ -74,12 +74,15 @@ class NicoDownloader(QMainWindow):
         job.readySig.connect(self.activate)
         self.enter.connect(self.enque)
         self.target.connect(job.settarget)
-        job.infoOK.connect(self.detail)
         self.query.connect(job.detail)
+        job.infoOK.connect(self.detail)
+        job.detailed.connect(self.issue)
 
     def shortcut(self):
         job = self.job
         # boost
+        ## window is not important
+        ## shortcut the dialogue
         job.confirm.connect(self.save)
         job.readySig.connect(self.download)
         
@@ -112,10 +115,11 @@ class NicoDownloader(QMainWindow):
 
     def detail(self):
         self.query.emit(self.gflag(), self.tflag)
-        self.wait()
+
+    def issue(self):
         if self.cflag():
             self.getname()
-        self.getready.emit()  # job will collect detail
+        self.getready.emit()  # job will prepare
     
     def savepath(self):
         if self._savename:
@@ -145,7 +149,7 @@ class NicoDownloader(QMainWindow):
                 savepath = select[0]
                 c = Path(select[0])
                 self.dst = c.parent
-                self.changename(c)
+                self.changename(str(c))
 
             self._savename = savepath
 ##        self.savepath.emit(savepath)
@@ -161,10 +165,9 @@ class NicoDownloader(QMainWindow):
         self.saveas.emit(self.savepath())
     
     def showThumnail(self, thbytes, fmt):
-        label = self.thumnail
         pxmap = QPixmap()
         pxmap.loadFromData(thbytes, format=fmt)
-        label.setPixmap(pxmap)
+        self.thumnail.setPixmap(pxmap)
         
 
     @staticmethod

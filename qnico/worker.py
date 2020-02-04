@@ -176,9 +176,14 @@ class NicoJob(QObject):
         
         z2 = videoinfo["dmcInfo"]
         if z2 is None:
+            self.dmcmode = False
             logger.info("server: smile mode")
             self.contentURi = videoinfo["smileInfo"]["url"]
+            logger.debug("Not DMC mode: [Direct]%s", self.contentURi)
+            self.readySig.emit()
+            return
         else:
+            self.dmcmode = True
             logger.info("server: dmc mode")
             dmc_api_response = z2["session_api"]
             dsr = DmcSessionRequest(dmc_api_response)
@@ -250,9 +255,10 @@ class NicoJob(QObject):
 ##            print(res4.status_code)
             res4.raise_for_status()
             logger.debug("content's info:", extra=res4.headers)
-            logger.info("connection health: %s", res4.headers["Connection"])
-            if "close" == res4.headers["Connection"]:
-                raise RuntimeError("File Stream was closed")
+            if self.dmcmode:
+                logger.info("connection health: %s", res4.headers["Connection"])
+                if "close" == res4.headers["Connection"]:
+                    raise RuntimeError("File Stream was closed")
             fs = res4.headers.get("content-length")
             self.filesize.emit(int(fs))
             logger.info("size: %s[byte]", fs)
